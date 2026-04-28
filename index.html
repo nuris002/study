@@ -1,21 +1,31 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="kk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduPath | Платформа подготовки к IELTS</title>
+    <title>Nis Qadam — Болашаққа қадам</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        .rank-gradient { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); }
+        h1, h2, h3, .font-sora { font-family: 'Sora', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid #e2e8f0; }
+        .card-shadow { box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); transition: all 0.3s ease; }
+        .card-shadow:hover { transform: translateY(-4px); box-shadow: 0 12px 25px -5px rgba(99, 102, 241, 0.15); }
+        .sidebar-item:hover { background-color: #f1f5f9; color: #6366f1; }
+        .active-link { background-color: #eef2ff; color: #6366f1; font-weight: 600; border-right: 4px solid #6366f1; }
+        /* Анимация XP */
+        @keyframes xp-float {
+            0% { opacity: 0; transform: translateY(0); }
+            50% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(-40px); }
+        }
+        .xp-gain { animation: xp-float 1.5s ease-out forwards; }
     </style>
 </head>
 <body>
@@ -23,272 +33,146 @@
 
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
+        const { 
+            AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
+        } = Recharts;
 
-        // --- КОНСТАНТЫ И ДАННЫЕ ---
-        const RANKS = [
-            { name: 'Новичок', minLevel: 0, emoji: '🥉', color: 'text-amber-700', bg: 'bg-amber-50' },
-            { name: 'Студент', minLevel: 5, emoji: '🥈', color: 'text-slate-600', bg: 'bg-slate-100' },
-            { name: 'Мастер', minLevel: 10, emoji: '🥇', color: 'text-yellow-600', bg: 'bg-yellow-50' },
-            { name: 'Элита', minLevel: 20, emoji: '💎', color: 'text-blue-600', bg: 'bg-blue-50' },
-            { name: 'Легенда', minLevel: 30, emoji: '👑', color: 'text-purple-600', bg: 'bg-purple-50' },
-        ];
-
-        const INITIAL_LESSONS = [
-            { id: 1, title: 'Введение в IELTS Listening', duration: '15:40', xp: 100, completed: true, video: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-            { id: 2, title: 'Стратегии Reading: Skimming', duration: '22:10', xp: 150, completed: false, video: '#' },
-            { id: 3, title: 'Writing Task 1: Описание графиков', duration: '18:25', xp: 200, completed: false, video: '#' },
-            { id: 4, title: 'Speaking: Как не бояться экзаменатора', duration: '12:00', xp: 120, completed: false, video: '#' },
-        ];
-
-        const LEADERBOARD = [
-            { id: 1, name: 'Мария И.', xp: 25400, level: 25, rank: 'Легенда' },
-            { id: 2, name: 'Алексей К.', xp: 21200, level: 21, rank: 'Элита' },
-            { id: 3, name: 'Dmitry Code', xp: 18500, level: 18, rank: 'Мастер' },
-            { id: 4, name: 'Анна С.', xp: 12300, level: 12, rank: 'Мастер' },
-        ];
-
-        // --- КОМПОНЕНТЫ ИКОНОК (Обертка для Lucide) ---
+        // --- ИКОНКИ ---
         const Icon = ({ name, size = 20, className = "" }) => {
             useEffect(() => { lucide.createIcons(); }, [name]);
             return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
         };
 
-        // --- ОСНОВНОЕ ПРИЛОЖЕНИЕ ---
-        function App() {
+        // --- ДАННЫЕ ---
+        const RANKS = [
+            { name: 'Talapker', min: 0, emoji: '🌱', color: 'text-slate-500', bg: 'bg-slate-100', border: 'border-slate-200' },
+            { name: 'Zhas Talant', min: 5000, emoji: '⚡', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200' },
+            { name: 'Bilimpaz', min: 15000, emoji: '🥇', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' },
+            { name: 'Akademik', min: 30000, emoji: '👑', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+        ];
+
+        const ACTIVITY_DATA = [
+            { name: 'Дүй', xp: 400 }, { name: 'Сей', xp: 700 }, { name: 'Сәр', xp: 450 },
+            { name: 'Бей', xp: 1000 }, { name: 'Жұм', xp: 850 }, { name: 'Сен', xp: 300 }, { name: 'Жек', xp: 500 }
+        ];
+
+        // --- ГЛАВНЫЙ КОМПОНЕНТ ---
+        function NisQadamApp() {
             const [isAuth, setIsAuth] = useState(false);
-            const [activePage, setPage] = useState('dashboard');
-            const [user, setUser] = useState({ name: 'Dmitry Code', xp: 8450, level: 8 });
-            const [lessons, setLessons] = useState(INITIAL_LESSONS);
+            const [page, setPage] = useState('dashboard');
+            const [user, setUser] = useState({ name: 'Аружан Сейіт', xp: 8450, level: 8 });
+            const [isAnimating, setIsAnimating] = useState(false);
 
-            const currentRank = useMemo(() => {
-                return [...RANKS].reverse().find(r => user.level >= r.minLevel) || RANKS[0];
-            }, [user.level]);
+            const rank = useMemo(() => {
+                return [...RANKS].reverse().find(r => user.xp >= r.min) || RANKS[0];
+            }, [user.xp]);
 
-            const progressToNextLevel = (user.xp % 1000) / 10;
+            const nextRank = RANKS[RANKS.indexOf(rank) + 1] || rank;
+            const progress = ((user.xp % 1000) / 10).toFixed(0);
+
+            const addXP = (amount) => {
+                setIsAnimating(true);
+                setUser(prev => ({ ...prev, xp: prev.xp + amount }));
+                setTimeout(() => setIsAnimating(false), 1500);
+            };
 
             if (!isAuth) return <AuthPage onLogin={() => setIsAuth(true)} />;
 
             return (
                 <div className="flex h-screen overflow-hidden">
                     {/* Sidebar */}
-                    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
+                    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col z-20">
                         <div className="p-6 flex items-center gap-3">
-                            <div className="bg-indigo-600 p-2 rounded-xl text-white">
+                            <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-200">
                                 <Icon name="book-open" size={24} />
                             </div>
-                            <span className="text-xl font-extrabold tracking-tight">EduPath</span>
+                            <span className="text-xl font-bold font-sora tracking-tight text-slate-800">Nis Qadam</span>
                         </div>
-
-                        <nav className="flex-1 px-4 space-y-1">
-                            <NavItem active={activePage === 'dashboard'} onClick={() => setPage('dashboard')} icon="layout" label="Дашборд" />
-                            <NavItem active={activePage === 'courses'} onClick={() => setPage('courses')} icon="play-circle" label="Видео-уроки" />
-                            <NavItem active={activePage === 'rating'} onClick={() => setPage('rating')} icon="tropy" label="Рейтинг" />
-                            <NavItem active={activePage === 'reports'} onClick={() => setPage('reports')} icon="bar-chart-3" label="Отчеты" />
+                        <nav className="flex-1 px-4 space-y-1 mt-4">
+                            <SidebarLink active={page === 'dashboard'} onClick={() => setPage('dashboard')} icon="layout" label="Басты бет" />
+                            <SidebarLink active={page === 'video'} onClick={() => setPage('video')} icon="play-circle" label="Сабақтар" />
+                            <SidebarLink active={page === 'rating'} onClick={() => setPage('rating')} icon="tropy" label="Рейтинг" />
+                            <SidebarLink active={page === 'stats'} onClick={() => setPage('stats')} icon="bar-chart-3" label="Талдау" />
                         </nav>
-
-                        <div className="p-4 mt-auto border-t border-slate-100">
-                            <div className="flex items-center gap-3 p-2">
-                                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-700">DC</div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-bold truncate">{user.name}</p>
-                                    <p className="text-xs text-slate-500">{currentRank.name}</p>
-                                </div>
-                                <button onClick={() => setIsAuth(false)} className="text-slate-400 hover:text-red-500">
-                                    <Icon name="log-out" size={18} />
-                                </button>
-                            </div>
+                        <div className="p-4 border-t border-slate-100">
+                            <button onClick={() => setIsAuth(false)} className="flex items-center gap-3 w-full p-3 text-slate-500 hover:text-red-500 transition-colors">
+                                <Icon name="log-out" size={20} />
+                                <span className="font-medium">Шығу</span>
+                            </button>
                         </div>
                     </aside>
 
-                    {/* Content Area */}
-                    <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                        <header className="h-16 bg-white/80 backdrop-blur border-bottom border-slate-200 flex items-center justify-between px-8 z-10">
-                            <h2 className="text-lg font-bold text-slate-800">
-                                {activePage === 'dashboard' && 'Обзор обучения'}
-                                {activePage === 'courses' && 'Библиотека курсов'}
-                                {activePage === 'rating' && 'Глобальный рейтинг'}
+                    {/* Main Content */}
+                    <main className="flex-1 flex flex-col relative overflow-y-auto">
+                        {isAnimating && (
+                            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 z-50 text-indigo-600 font-bold text-3xl xp-gain">
+                                +150 XP 🚀
+                            </div>
+                        )}
+
+                        <header className="h-16 glass px-8 flex items-center justify-between sticky top-0 z-10">
+                            <h2 className="text-lg font-bold text-slate-800 uppercase tracking-wider text-sm">
+                                {page === 'dashboard' ? 'Жалпы шолу' : 'Оқу бөлімі'}
                             </h2>
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full">
-                                    <Icon name="zap" size={16} className="text-amber-500 fill-amber-500" />
-                                    <span className="text-sm font-bold">{user.xp.toLocaleString()} XP</span>
+                            <div className="flex items-center gap-6">
+                                <div className="flex items-center gap-2 bg-indigo-50 px-4 py-1.5 rounded-full border border-indigo-100">
+                                    <Icon name="zap" size={16} className="text-indigo-600 fill-indigo-600" />
+                                    <span className="text-sm font-bold text-indigo-600">{user.xp.toLocaleString()} XP</span>
                                 </div>
-                                <Icon name="bell" size={20} className="text-slate-400" />
+                                <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden">
+                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Arujan" alt="avatar" />
+                                </div>
                             </div>
                         </header>
 
-                        <div className="flex-1 overflow-y-auto p-8 custom-scroll">
-                            {activePage === 'dashboard' && <Dashboard user={user} rank={currentRank} progress={progressToNextLevel} />}
-                            {activePage === 'courses' && <Courses lessons={lessons} />}
-                            {activePage === 'rating' && <Rating leaderboard={LEADERBOARD} />}
+                        <div className="p-8 max-w-6xl mx-auto w-full">
+                            {page === 'dashboard' ? (
+                                <Dashboard user={user} rank={rank} nextRank={nextRank} progress={progress} />
+                            ) : (
+                                <VideoLesson onComplete={() => addXP(150)} />
+                            )}
                         </div>
                     </main>
                 </div>
             );
         }
 
-        // --- СТРАНИЦЫ ---
+        // --- КОМПОНЕНТЫ СТРАНИЦ ---
 
-        function NavItem({ icon, label, active, onClick }) {
+        function SidebarLink({ active, onClick, icon, label }) {
             return (
-                <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active ? 'bg-indigo-50 text-indigo-600 font-bold' : 'text-slate-500 hover:bg-slate-50'}`}>
+                <button onClick={onClick} className={`sidebar-item flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all ${active ? 'active-link' : 'text-slate-500'}`}>
                     <Icon name={icon} size={20} />
-                    <span>{label}</span>
+                    <span className="font-medium">{label}</span>
                 </button>
             );
         }
 
-        function Dashboard({ user, rank, progress }) {
+        function Dashboard({ user, rank, nextRank, progress }) {
             return (
-                <div className="space-y-8 animate-in fade-in duration-500">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="md:col-span-2 bg-indigo-600 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl shadow-indigo-200">
+                <div className="space-y-8 animate-in fade-in duration-700">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-2 bg-indigo-600 rounded-[32px] p-10 text-white relative overflow-hidden shadow-2xl shadow-indigo-200">
                             <div className="relative z-10">
-                                <h1 className="text-3xl font-extrabold mb-2">С возвращением, {user.name.split(' ')[0]}!</h1>
-                                <p className="opacity-80 mb-6">Ваш прогресс сегодня впечатляет. Пройдите еще один урок, чтобы поднять ранг.</p>
-                                <button className="bg-white text-indigo-600 px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg">Продолжить обучение</button>
+                                <h1 className="text-3xl font-bold font-sora mb-2">Қайырлы күн, {user.name}!</h1>
+                                <p className="text-indigo-100 mb-8 max-w-md">НИШ-ке түсуге тағы бір қадам қалды. Бүгінгі мақсат — Математикадан тест тапсыру.</p>
+                                <button className="bg-white text-indigo-600 px-8 py-3 rounded-2xl font-bold shadow-lg hover:bg-indigo-50 transition-all">Сабақты бастау</button>
                             </div>
-                            <Icon name="award" size={140} className="absolute -right-4 -bottom-4 opacity-10 rotate-12" />
+                            <Icon name="award" size={180} className="absolute -right-8 -bottom-8 opacity-10 rotate-12" />
                         </div>
-                        
-                        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-bold">Ваш ранг</h3>
-                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${rank.bg} ${rank.color}`}>{rank.name}</span>
-                            </div>
-                            <div className="text-center py-4">
-                                <span className="text-6xl mb-2 block">{rank.emoji}</span>
-                                <p className="text-slate-400 text-sm">Уровень {user.level}</p>
-                            </div>
-                            <div className="mt-4">
-                                <div className="flex justify-between text-xs mb-1 font-bold">
-                                    <span>Прогресс до Ур. {user.level + 1}</span>
-                                    <span>{Math.round(progress)}%</span>
+
+                        <div className="bg-white rounded-[32px] p-8 card-shadow border border-slate-100 text-center">
+                            <div className="text-5xl mb-4">{rank.emoji}</div>
+                            <h3 className="text-xl font-bold text-slate-800 mb-1">{rank.name}</h3>
+                            <p className="text-slate-400 text-sm mb-6">Деңгей {user.level}</p>
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-xs font-bold text-slate-500">
+                                    <span>Прогресс</span>
+                                    <span>{progress}%</span>
                                 </div>
-                                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                                    <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${progress}%` }}></div>
+                                <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-full bg-indigo-500 transition-all duration-1000" style={{ width: `${progress}%` }}></div>
                                 </div>
+                                <p className="text-[10px] text-slate-400 pt-2 italic">Келесі ранг: {nextRank.name}</p>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <StatCard icon="clock" label="Часов в обучении" value="42.5" color="text-blue-500" />
-                        <StatCard icon="check-circle" label="Заданий выполнено" value="128" color="text-emerald-500" />
-                        <StatCard icon="flame" label="Ударный режим" value="12 дней" color="text-orange-500" />
-                        <StatCard icon="trending-up" label="Средний балл" value="7.5" color="text-indigo-500" />
-                    </div>
-                </div>
-            );
-        }
-
-        function Courses({ lessons }) {
-            return (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl relative">
-                            <iframe className="w-full h-full" src={lessons[0].video} frameBorder="0" allowFullScreen></iframe>
-                        </div>
-                        <div className="bg-white p-6 rounded-3xl border border-slate-200">
-                            <h2 className="text-2xl font-bold mb-2">{lessons[0].title}</h2>
-                            <p className="text-slate-500">В этом модуле мы разберем основные типы вопросов в секции Listening и научимся предугадывать ответы до начала записи.</p>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-3xl border border-slate-200 p-6 flex flex-col h-[600px]">
-                        <h3 className="font-bold mb-4">Плейлист курса</h3>
-                        <div className="flex-1 overflow-y-auto space-y-3 custom-scroll pr-2">
-                            {lessons.map(lesson => (
-                                <div key={lesson.id} className={`p-4 rounded-2xl flex items-center gap-4 border transition-all cursor-pointer ${lesson.completed ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-slate-100 hover:border-indigo-200'}`}>
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${lesson.completed ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                                        <Icon name={lesson.completed ? "check" : "play"} size={14} />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className={`text-sm font-bold ${lesson.completed ? 'text-emerald-900' : 'text-slate-800'}`}>{lesson.title}</p>
-                                        <p className="text-xs text-slate-400">{lesson.duration} • {lesson.xp} XP</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        function Rating({ leaderboard }) {
-            return (
-                <div className="max-w-3xl mx-auto space-y-6">
-                    <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-slate-50 border-b border-slate-100">
-                                    <th className="p-6 text-xs font-bold text-slate-400 uppercase tracking-wider">Место</th>
-                                    <th className="p-6 text-xs font-bold text-slate-400 uppercase tracking-wider">Студент</th>
-                                    <th className="p-6 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Ранг / XP</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {leaderboard.map((item, index) => (
-                                    <tr key={item.id} className={item.name === 'Dmitry Code' ? 'bg-indigo-50/50' : ''}>
-                                        <td className="p-6 font-bold text-slate-400">#{index + 1}</td>
-                                        <td className="p-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600">
-                                                    {item.name.split(' ')[0][0]}
-                                                </div>
-                                                <span className="font-bold text-slate-800">{item.name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="p-6 text-right">
-                                            <div className="font-bold text-indigo-600">{item.xp.toLocaleString()} XP</div>
-                                            <div className="text-xs text-slate-400">{item.rank}</div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            );
-        }
-
-        function StatCard({ icon, label, value, color }) {
-            return (
-                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                    <Icon name={icon} size={24} className={`${color} mb-4`} />
-                    <p className="text-2xl font-extrabold text-slate-900">{value}</p>
-                    <p className="text-xs text-slate-500 font-medium">{label}</p>
-                </div>
-            );
-        }
-
-        function AuthPage({ onLogin }) {
-            return (
-                <div className="h-screen flex items-center justify-center bg-slate-50 px-4">
-                    <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-[40px] shadow-2xl shadow-indigo-100 border border-slate-100">
-                        <div className="text-center">
-                            <div className="inline-flex bg-indigo-600 p-3 rounded-2xl text-white mb-4">
-                                <Icon name="book-open" size={32} />
-                            </div>
-                            <h2 className="text-3xl font-extrabold text-slate-900">Добро пожаловать</h2>
-                            <p className="text-slate-500 mt-2">Войдите в EduPath, чтобы продолжить</p>
-                        </div>
-                        <div className="space-y-4">
-                            <input type="email" placeholder="Email" className="w-full px-6 py-4 bg-slate-50 border-transparent focus:border-indigo-500 focus:bg-white rounded-2xl transition-all outline-none" />
-                            <input type="password" placeholder="Пароль" className="w-full px-6 py-4 bg-slate-50 border-transparent focus:border-indigo-500 focus:bg-white rounded-2xl transition-all outline-none" />
-                            <button onClick={onLogin} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]">
-                                Войти в систему
-                            </button>
-                        </div>
-                        <p className="text-center text-sm text-slate-400">
-                            Нет аккаунта? <span className="text-indigo-600 font-bold cursor-pointer">Создать профиль</span>
-                        </p>
-                    </div>
-                </div>
-            );
-        }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
